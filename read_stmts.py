@@ -3,20 +3,11 @@ import json
 from datetime import datetime as dt
 import csv
 import random
-"""
-Nothing found for CIK 0001569650
-Nothing found for CIK 0001943802
-Nothing found for CIK 0001492165
-Nothing found for CIK 0001913971
-Nothing found for CIK 0001288784
-Nothing found for CIK 0001299939
-Nothing found for CIK 0001132979
-Nothing found for CIK 0001103838
-Nothing found for CIK 0001103838
-"""
 
 item_counts = {}
 
+
+# This mess maps the XBRL tag to the right part of our analysis
 finstmt_pull = {}
 finstmt_pull['afs_unrealized_loss'] = ['AvailableForSaleDebtSecuritiesAccumulatedGrossUnrealizedLossBeforeTax','AvailableForSaleSecuritiesAccumulatedGrossUnrealizedLossBeforeTax','AvailableForSaleDebtSecuritiesGrossUnrealizedLoss','AvailableForSaleSecuritiesGrossUnrealizedLoss','AvailableForSaleSecuritiesGrossUnrealizedLosses1','AvailableForSaleSecuritiesGrossUnrealizedLosses','DebtSecuritiesAvailableForSaleUnrealizedLossPosition']
 finstmt_pull['afs_unrealized_gain'] = ['AvailableForSaleDebtSecuritiesAccumulatedGrossUnrealizedGainBeforeTax','AvailableForSaleSecuritiesAccumulatedGrossUnrealizedGainBeforeTax','AvailableForSaleDebtSecuritiesGrossUnrealizedGain','AvailableforsaleSecuritiesGrossUnrealizedGain','AvailableForSaleSecuritiesGrossUnrealizedGains','DebtSecuritiesAvailableForSaleUnrealizedGainPosition']
@@ -89,6 +80,9 @@ def guess_currency(finstmt: dict) -> str:
     return max_value
     
 def guess_dates(finstmt:dict, form: str, currency: str) -> dt | dt:
+    """
+    Guess the last two financial statement dates published. Looks at Total Assets. Everyone has total assets right?
+    """
     last_date = ""
     second_last_date = ""
     for row in finstmt['facts']['us-gaap']["Assets"]["units"][currency]:
@@ -102,6 +96,9 @@ def guess_dates(finstmt:dict, form: str, currency: str) -> dt | dt:
     return last_date, second_last_date
 
 def transform_stmt(finstmt: dict,form: str, currency: str, last_date: dt, second_last_date: dt):
+    """
+    Rationalizes the fincial statement API format to figure out what statement item is in the current or prior year.
+    """
     output = {
         'last_date': last_date, 
         'second_last_date': second_last_date,
@@ -173,6 +170,9 @@ def format_stmt_item(finstmt_tfm: dict):
 
 
 def run():
+    """
+    Reads every ticker and outputs the CSV summary data
+    """
     with open("./tickers.csv",'r') as input_file_handle, open('./finresults.csv','w') as output_file_handle:
         ticker_csv = csv.DictReader(input_file_handle)
         output_csv = csv.DictWriter(output_file_handle,[ 'cik', 'ticker', 'name', 'country', 'currency','CY','PY','CY_afs_unrealized_loss', 'CY_afs_unrealized_gain', 'CY_afs_fair_value', 'CY_afs_historical_value', 'CY_deposits', 'CY_htm_fair_value', 'CY_htm_unrealized_gain', 'CY_htm_unrealized_loss', 'CY_htm_historical_value', 'CY_notes_historical_value', 'CY_total_assets', 'CY_total_liabilities', 'CY_net_income', 'CY_oci', 'PY_afs_unrealized_loss', 'PY_afs_unrealized_gain', 'PY_afs_fair_value', 'PY_afs_historical_value', 'PY_deposits', 'PY_htm_fair_value', 'PY_htm_unrealized_gain', 'PY_htm_unrealized_loss', 'PY_htm_historical_value', 'PY_notes_historical_value', 'PY_total_assets', 'PY_total_liabilities', 'PY_net_income', 'PY_oci', 'CY_afs_unrealized_loss_stmt_item_name', 'CY_afs_unrealized_gain_stmt_item_name', 'CY_afs_fair_value_stmt_item_name', 'CY_afs_historical_value_stmt_item_name', 'CY_deposits_stmt_item_name', 'CY_htm_fair_value_stmt_item_name', 'CY_htm_unrealized_gain_stmt_item_name', 'CY_htm_unrealized_loss_stmt_item_name', 'CY_htm_historical_value_stmt_item_name', 'CY_notes_historical_value_stmt_item_name', 'CY_total_assets_stmt_item_name', 'CY_total_liabilities_stmt_item_name', 'CY_net_income_stmt_item_name', 'CY_oci_stmt_item_name', 'PY_afs_unrealized_loss_stmt_item_name', 'PY_afs_unrealized_gain_stmt_item_name', 'PY_afs_fair_value_stmt_item_name', 'PY_afs_historical_value_stmt_item_name', 'PY_deposits_stmt_item_name', 'PY_htm_fair_value_stmt_item_name', 'PY_htm_unrealized_gain_stmt_item_name', 'PY_htm_unrealized_loss_stmt_item_name', 'PY_htm_historical_value_stmt_item_name', 'PY_notes_historical_value_stmt_item_name', 'PY_total_assets_stmt_item_name', 'PY_total_liabilities_stmt_item_name', 'PY_net_income_stmt_item_name', 'PY_oci_stmt_item_name'])
